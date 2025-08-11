@@ -11,7 +11,10 @@ export default function Dashboard() {
     { path: '/add-banner', label: 'Add Banner' },
     { path: '/delete-test', label: 'Delete Test' },
     { path: '/delete-course', label: 'Delete Course' },
-    { path: '/delete-banner', label: 'Delete Banner' }
+    { path: '/delete-banner', label: 'Delete Banner' },
+    { path: '/modify-test', label: 'Modify Test' },
+    { path: '/modify-course', label: 'Modify Course' },
+    { path: '/modify-banner', label: 'Modify Banner' }
   ]
 
   return (

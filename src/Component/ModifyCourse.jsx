@@ -1,21 +1,17 @@
 import React, { useState } from 'react'
-import { Container, Row, Col, Form, Button, Alert, Card, Badge } from 'react-bootstrap'
+import { Container, Row, Col, Form, Button, Alert } from 'react-bootstrap'
 import axios from 'axios'
 
 export default function ModifyCourse() {
   const [courseId, setCourseId] = useState('')
-  const [course, setCourse] = useState(null)
   const [form, setForm] = useState(null)
   const [image, setImage] = useState(null)
   const [message, setMessage] = useState('')
   const [variant, setVariant] = useState('success')
-  const [showConfirm, setShowConfirm] = useState(false)
 
   const handleCheckCourse = async () => {
     setMessage('')
     setVariant('success')
-    setShowConfirm(false)
-    setCourse(null)
     setForm(null)
     if (!courseId) {
       setMessage('Please enter a Course ID.')
@@ -25,7 +21,6 @@ export default function ModifyCourse() {
     try {
       const response = await axios.get(`http://localhost:8080/courses/getcoursebyid/${courseId}`)
       if (response.status === 200 && response.data && response.data.id) {
-        setCourse(response.data)
         setForm({
           name: response.data.name,
           description: response.data.description,
@@ -35,7 +30,6 @@ export default function ModifyCourse() {
         })
         setMessage('✅ Course found. You can now modify and confirm.')
         setVariant('success')
-        setShowConfirm(true)
       } else {
         setMessage('❌ Course not found or invalid ID.')
         setVariant('danger')
@@ -60,6 +54,19 @@ export default function ModifyCourse() {
       setVariant('danger')
       return
     }
+    if (parseFloat(form.price) <= 0) {
+      setMessage('Price must be a positive number.')
+      setVariant('danger')
+      return
+    }
+    if (
+      parseInt(form.discountPercentage) < 1 ||
+      parseInt(form.discountPercentage) > 100
+    ) {
+      setMessage('Discount Percentage must be between 1 and 100.')
+      setVariant('danger')
+      return
+    }
     const tagsArray = form.tags.split(',').map(tag => tag.trim())
     const courseData = {
       name: form.name,
@@ -68,20 +75,24 @@ export default function ModifyCourse() {
       discountPercentage: parseFloat(form.discountPercentage),
       tags: tagsArray
     }
+
     const formData = new FormData()
-    formData.append('course', new Blob([JSON.stringify(courseData)], { type: 'application/json' }))
+    formData.append(
+      'course',
+      new Blob([JSON.stringify(courseData)], { type: 'application/json' })
+    )
     if (image) formData.append('image', image)
 
     try {
-      const response = await axios.put(`http://localhost:8080/courses/updatecourse/${courseId}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
+      const response = await axios.put(
+        `http://localhost:8080/courses/updatecourse/${courseId}`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      )
       if (response.status === 200) {
         setMessage('✅ Course updated successfully.')
         setVariant('success')
-        setShowConfirm(false)
         setCourseId('')
-        setCourse(null)
         setForm(null)
         setImage(null)
       } else {
@@ -128,11 +139,28 @@ export default function ModifyCourse() {
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Price</Form.Label>
-                <Form.Control type="number" name="price" value={form.price} onChange={handleChange} required />
+                <Form.Control
+                  type="number"
+                  name="price"
+                  value={form.price}
+                  onChange={handleChange}
+                  required
+                  min="0.01"
+                  step="0.01"
+                />
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Discount Percentage</Form.Label>
-                <Form.Control type="number" name="discountPercentage" value={form.discountPercentage} onChange={handleChange} required />
+                <Form.Control
+                  type="number"
+                  name="discountPercentage"
+                  value={form.discountPercentage}
+                  onChange={handleChange}
+                  required
+                  min="1"
+                  max="100"
+                  step="1"
+                />
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Tags (comma separated)</Form.Label>

@@ -21,7 +21,7 @@ export default function ModifyBanner() {
       return
     }
     try {
-      const response = await axios.get(`http://localhost:8080/banner/getbannerbyid/${bannerId}`)
+      const response = await axios.get(`http://localhost:8080/banner/${bannerId}`)
       if (response.status === 200 && response.data && response.data.id) {
         setBanner(response.data)
         setForm({

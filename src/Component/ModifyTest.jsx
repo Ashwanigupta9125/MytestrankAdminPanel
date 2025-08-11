@@ -24,7 +24,7 @@ export default function ModifyTest() {
       return
     }
     try {
-      const response = await axios.get(`http://localhost:8080/tests/gettestbyid/${testId}`)
+      const response = await axios.get(`http://localhost:8080/fetch/testbyId/${testId}`)
       if (response.status === 200 && response.data && response.data.id) {
         setTest(response.data)
         setForm({
@@ -37,8 +37,7 @@ export default function ModifyTest() {
           durationInMinutes: response.data.durationInMinutes,
           contain: response.data.contain || '',
           scheduledStart: response.data.scheduledStart ? response.data.scheduledStart.slice(0, 16) : '',
-          scheduledEnd: response.data.scheduledEnd ? response.data.scheduledEnd.slice(0, 16) : '',
-          courseId: response.data.course?.id || ''
+          scheduledEnd: response.data.scheduledEnd ? response.data.scheduledEnd.slice(0, 16) : ''
         })
         setMessage('✅ Test found. You can now modify and confirm.')
         setVariant('success')
@@ -71,10 +70,22 @@ export default function ModifyTest() {
       !form.durationInMinutes ||
       !form.contain ||
       !form.scheduledStart ||
-      !form.scheduledEnd ||
-      !form.courseId
+      !form.scheduledEnd
     ) {
       setMessage('Please fill all fields.')
+      setVariant('danger')
+      return
+    }
+    if (parseFloat(form.price) <= 0) {
+      setMessage('Price must be a positive number.')
+      setVariant('danger')
+      return
+    }
+    if (
+      parseInt(form.discountPercentage) < 1 ||
+      parseInt(form.discountPercentage) > 100
+    ) {
+      setMessage('Discount Percentage must be between 1 and 100.')
       setVariant('danger')
       return
     }
@@ -84,23 +95,22 @@ export default function ModifyTest() {
       type: form.type,
       language: form.language,
       price: parseFloat(form.price),
-      discountPercentage: parseFloat(form.discountPercentage),
+      discountPercentage: parseInt(form.discountPercentage),
       durationInMinutes: parseInt(form.durationInMinutes),
       contain: form.contain,
       scheduledStart: form.scheduledStart,
-      scheduledEnd: form.scheduledEnd,
-      course: {
-        id: parseInt(form.courseId)
-      }
+      scheduledEnd: form.scheduledEnd
     }
     const formData = new FormData()
     formData.append('test', new Blob([JSON.stringify(testData)], { type: 'application/json' }))
     if (image) formData.append('image', image)
 
     try {
-      const response = await axios.put(`http://localhost:8080/tests/updatetest/${testId}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
+      const response = await axios.put(
+        `http://localhost:8080/tests/update/${testId}`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      )
       if (response.status === 200) {
         setMessage('✅ Test updated successfully.')
         setVariant('success')
@@ -113,7 +123,10 @@ export default function ModifyTest() {
         setVariant('danger')
       }
     } catch (error) {
-      setMessage('❌ Error updating test.')
+      setMessage(
+        '❌ Error updating test. ' +
+          (error.response?.data ? error.response.data : error.message)
+      )
       setVariant('danger')
     }
   }
@@ -170,11 +183,28 @@ export default function ModifyTest() {
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Price</Form.Label>
-                <Form.Control type="number" name="price" value={form.price} onChange={handleChange} required />
+                <Form.Control
+                  type="number"
+                  name="price"
+                  value={form.price}
+                  onChange={handleChange}
+                  required
+                  min="0.01"
+                  step="0.01"
+                />
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Discount Percentage</Form.Label>
-                <Form.Control type="number" name="discountPercentage" value={form.discountPercentage} onChange={handleChange} required />
+                <Form.Control
+                  type="number"
+                  name="discountPercentage"
+                  value={form.discountPercentage}
+                  onChange={handleChange}
+                  required
+                  min="1"
+                  max="100"
+                  step="1"
+                />
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Duration (minutes)</Form.Label>
@@ -191,10 +221,6 @@ export default function ModifyTest() {
               <Form.Group className="mb-3">
                 <Form.Label>Scheduled End</Form.Label>
                 <Form.Control type="datetime-local" name="scheduledEnd" value={form.scheduledEnd} onChange={handleChange} required />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Course ID</Form.Label>
-                <Form.Control type="number" name="courseId" value={form.courseId} onChange={handleChange} required />
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Test Image (optional)</Form.Label>
