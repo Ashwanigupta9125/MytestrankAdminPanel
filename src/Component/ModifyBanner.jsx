@@ -21,7 +21,7 @@ export default function ModifyBanner() {
       return
     }
     try {
-      const response = await axios.get(`http://localhost:8080/banner/${bannerId}`)
+      const response = await axios.get(`http://88.222.214.204:8085/banner/${bannerId}`)
       if (response.status === 200 && response.data && response.data.id) {
         setBanner(response.data)
         setForm({
@@ -65,7 +65,7 @@ export default function ModifyBanner() {
     if (image) formData.append('image', image)
 
     try {
-      const response = await axios.put(`http://localhost:8080/banner/updatebanner/${bannerId}`, formData, {
+      const response = await axios.put(`http://88.222.214.204:8085/banner/updatebanner/${bannerId}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
       if (response.status === 200) {

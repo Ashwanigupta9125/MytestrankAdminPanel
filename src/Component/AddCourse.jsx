@@ -44,7 +44,7 @@ export default function AddCourse() {
     formData.append('image', image)
 
     try {
-      const response = await axios.post('http://localhost:8080/courses/addcourse', formData, {
+      const response = await axios.post('http://88.222.214.204:8085/courses/addcourse', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

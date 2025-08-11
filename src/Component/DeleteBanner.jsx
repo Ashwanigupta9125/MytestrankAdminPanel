@@ -23,7 +23,7 @@ export default function DeleteBanner() {
     setShowConfirm(false);
 
     try {
-      const response = await axios.get(`http://localhost:8080/banner/${bannerId}`);
+      const response = await axios.get(`http://88.222.214.204:8085/banner/${bannerId}`);
       const data = response.data;
 
       // Handle null, empty object, or missing expected fields
@@ -70,7 +70,7 @@ export default function DeleteBanner() {
     setIsLoading(true);
     
     try {
-      await axios.delete(`http://localhost:8080/banner/removeBanner/${bannerId}`);
+      await axios.delete(`http://88.222.214.204:8085/banner/removeBanner/${bannerId}`);
       setMessage(`✅ Banner deleted successfully for ID: ${bannerId}`);
       setVariant('success');
       setBanner(null);

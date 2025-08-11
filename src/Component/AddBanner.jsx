@@ -40,7 +40,7 @@ export default function AddBanner() {
 
     try {
       const response = await axios.post(
-        'http://localhost:8080/banner/addbanner',
+        'http://88.222.214.204:8085/banner/addbanner',
         formData,
         {
           headers: {
