@@ -90,7 +90,7 @@ export default function AddTest() {
     formData.append('image', image)
 
     try {
-      const response = await axios.post('http://www.srv620732.hstgr.cloud/tests/addtest', formData, {
+      const response = await axios.post('https://www.srv620732.hstgr.cloud/tests/addtest', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

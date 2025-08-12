@@ -44,7 +44,7 @@ export default function AddCourse() {
     formData.append('image', image)
 
     try {
-      const response = await axios.post('http://www.srv620732.hstgr.cloud/courses/addcourse', formData, {
+      const response = await axios.post('https://www.srv620732.hstgr.cloud/courses/addcourse', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
