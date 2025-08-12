@@ -24,7 +24,7 @@ export default function ModifyTest() {
       return
     }
     try {
-      const response = await axios.get(`http://88.222.214.204:8085/fetch/testbyId/${testId}`)
+      const response = await axios.get(`http://www.srv620732.hstgr.cloud/fetch/testbyId/${testId}`)
       if (response.status === 200 && response.data && response.data.id) {
         setTest(response.data)
         setForm({
@@ -107,7 +107,7 @@ export default function ModifyTest() {
 
     try {
       const response = await axios.put(
-        `http://88.222.214.204:8085/tests/update/${testId}`,
+        `http://www.srv620732.hstgr.cloud/tests/update/${testId}`,
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       )

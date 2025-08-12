@@ -19,7 +19,7 @@ export default function ModifyCourse() {
       return
     }
     try {
-      const response = await axios.get(`http://88.222.214.204:8085/courses/getcoursebyid/${courseId}`)
+      const response = await axios.get(`http://www.srv620732.hstgr.cloud/courses/getcoursebyid/${courseId}`)
       if (response.status === 200 && response.data && response.data.id) {
         setForm({
           name: response.data.name,
@@ -85,7 +85,7 @@ export default function ModifyCourse() {
 
     try {
       const response = await axios.put(
-        `http://88.222.214.204:8085/courses/updatecourse/${courseId}`,
+        `http://www.srv620732.hstgr.cloud/courses/updatecourse/${courseId}`,
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       )
