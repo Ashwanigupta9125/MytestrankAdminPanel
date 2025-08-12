@@ -11,7 +11,7 @@ export default function DeleteCourse() {
 
   const handleCheckCourse = async () => {
     try {
-      const response = await axios.get(`http://www.srv620732.hstgr.cloud/courses/getcoursebyid/${courseId}`)
+      const response = await axios.get(`https://www.srv620732.hstgr.cloud/courses/getcoursebyid/${courseId}`)
 
       if (response.status === 200 && response.data && response.data.id) {
         setCourse(response.data)
@@ -38,7 +38,7 @@ export default function DeleteCourse() {
 
   const handleDeleteCourse = async () => {
     try {
-      const response = await axios.delete(`http://www.srv620732.hstgr.cloud/courses/removecourse/${courseId}`)
+      const response = await axios.delete(`https://www.srv620732.hstgr.cloud/courses/removecourse/${courseId}`)
       if (response.status === 200) {
         setMessage('✅ Course deleted successfully.')
         setVariant('success')
