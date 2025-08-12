@@ -11,7 +11,7 @@ export default function DeleteTest() {
 
   const handleCheckTest = async () => {
     try {
-      const response = await axios.get(`http://88.222.214.204:8085/fetch/testbyId/${testId}`)
+      const response = await axios.get(`http://www.srv620732.hstgr.cloud/fetch/testbyId/${testId}`)
 
       if (response.status === 200 && response.data && response.data.id) {
         setTest(response.data)
@@ -38,7 +38,7 @@ export default function DeleteTest() {
 
   const handleDeleteTest = async () => {
     try {
-      const response = await axios.delete(`http://88.222.214.204:8085/tests/deletetest/${testId}`)
+      const response = await axios.delete(`http://www.srv620732.hstgr.cloud/tests/deletetest/${testId}`)
       if (response.status === 200) {
         setMessage('✅ Test deleted successfully.')
         setVariant('success')

@@ -40,7 +40,7 @@ export default function AddBanner() {
 
     try {
       const response = await axios.post(
-        'http://88.222.214.204:8085/banner/addbanner',
+        'http://www.srv620732.hstgr.cloud/banner/addbanner',
         formData,
         {
           headers: {
