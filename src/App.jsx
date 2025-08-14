@@ -12,6 +12,7 @@ import DeleteBanner from './Component/DeleteBanner'
 import ModifyTest from './Component/ModifyTest'
 import ModifyCourse from './Component/ModifyCourse'
 import ModifyBanner from './Component/ModifyBanner'
+import DataFetcher from './Component/DataFetcher'
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
           <Route path="/modify-test" element={<ModifyTest />} />
           <Route path="/modify-course" element={<ModifyCourse />} />
           <Route path="/modify-banner" element={<ModifyBanner />} />
+          <Route path="/data-fetcher" element={<DataFetcher />} />
         </Route>
       </Routes>
     </Router>
