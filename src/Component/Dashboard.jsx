@@ -6,6 +6,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const routes = [
     { path: '/main', label: 'Main Page' },
+    { path: '/data-fetcher', label: '📊 Data Fetcher' },
     { path: '/add-test', label: 'Add Test' },
     { path: '/add-course', label: 'Add Course' },
     { path: '/add-banner', label: 'Add Banner' },
