@@ -37,9 +37,9 @@ export default function DataFetcher() {
   const [selectedItem, setSelectedItem] = useState(null);
 
   const options = [
-    { value: 'banner', label: 'Banner', endpoint: 'https://www.srv620732.hstgr.cloud/banner/getBanners' },
-    { value: 'courses', label: 'Courses', endpoint: 'https://www.srv620732.hstgr.cloud/courses/getallcourse' },
-    { value: 'tests', label: 'Tests', endpoint: 'https://www.srv620732.hstgr.cloud/fetch/alltests' }
+    { value: 'banner', label: 'Banner', endpoint: 'http://localhost:8080/banner/getBanners' },
+    { value: 'courses', label: 'Courses', endpoint: 'http://localhost:8080/courses/getallcourse' },
+    { value: 'tests', label: 'Tests', endpoint: 'http://localhost:8080/fetch/alltests' }
   ];
 
   const fetchData = async () => {

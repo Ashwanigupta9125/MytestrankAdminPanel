@@ -34,7 +34,7 @@ function CustomLoginPage() {
   const handleLogin = async () => {
     console.log('Login Attempt:', { email, userPassword });
     try {
-      const response = await axios.post('https://www.srv620732.hstgr.cloud/authenticate', {
+      const response = await axios.post('http://localhost:8080/authenticate', {
         email: email,
         password: userPassword,
       });

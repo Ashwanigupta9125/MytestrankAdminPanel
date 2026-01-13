@@ -5,7 +5,6 @@ import axios from 'axios';
 export default function AddBanner() {
   const [form, setForm] = useState({
     title: '',
-    title_detail: '',
     urlToDirect: ''
   });
   const [image, setImage] = useState(null);
@@ -23,7 +22,7 @@ export default function AddBanner() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.title || !form.title_detail || !form.urlToDirect || !image) {
+    if (!form.title || !form.urlToDirect || !image) {
       setMessage('Please fill all fields and select an image.');
       setVariant('danger');
       return;
@@ -40,7 +39,7 @@ export default function AddBanner() {
 
     try {
       const response = await axios.post(
-        'https://www.srv620732.hstgr.cloud/banner/addbanner',
+        'http://localhost:8080/banner/addbanner',
         formData,
         {
           headers: {
@@ -52,7 +51,7 @@ export default function AddBanner() {
       if (response.status === 201) {
         setMessage('✅ Banner added successfully!');
         setVariant('success');
-        setForm({ title: '', title_detail: '', urlToDirect: '' });
+        setForm({ title: '', urlToDirect: '' });
         setImage(null);
       } else {
         setMessage('❌ Failed to add banner.');
@@ -79,18 +78,6 @@ export default function AddBanner() {
                 value={form.title}
                 onChange={handleChange}
                 placeholder="Enter banner title"
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="formTitleDetail">
-              <Form.Label>Title Detail</Form.Label>
-              <Form.Control
-                type="text"
-                name="title_detail"
-                value={form.title_detail}
-                onChange={handleChange}
-                placeholder="Enter banner detail"
                 required
               />
             </Form.Group>
