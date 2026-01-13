@@ -10,7 +10,6 @@ export default function ModifyTest() {
   const [test, setTest] = useState(null)
   const [testType, setTestType] = useState('') // 'NORMAL' or 'LIVE'
   const [form, setForm] = useState(null)
-  const [image, setImage] = useState(null)
   const [message, setMessage] = useState('')
   const [variant, setVariant] = useState('success')
   const [courses, setCourses] = useState([])
@@ -37,27 +36,29 @@ export default function ModifyTest() {
     setVariant('success')
     setTest(null)
     setForm(null)
-    setTestType('')
+
+    if (!testType) {
+      setMessage('Please select test type.')
+      setVariant('danger')
+      return
+    }
+
     if (!testId) {
       setMessage('Please enter a Test ID.')
       setVariant('danger')
       return
     }
+
     try {
-      const response = await axios.get(`http://localhost:8080/fetch/testbyId/${testId}`)
+      const endpoint = testType === 'NORMAL'
+        ? `http://localhost:8080/test/normal/fetch/${testId}`
+        : `http://localhost:8080/test/live/fetch/${testId}`
+      const response = await axios.get(endpoint)
       if (response.status === 200 && response.data && response.data.id) {
         setTest(response.data)
         const testData = response.data
-        
-        // Determine test type based on available fields
-        const isLiveTest = testData.difficulty !== undefined || 
-                          testData.startingDate !== undefined ||
-                          testData.endingDate !== undefined
-        
-        setTestType(isLiveTest ? 'LIVE' : 'NORMAL')
-        
-        if (isLiveTest) {
-          // Live Test fields
+
+        if (testType === 'LIVE') {
           setForm({
             title: testData.title || '',
             contain: testData.contain || '',
@@ -68,14 +69,14 @@ export default function ModifyTest() {
             difficulty: testData.difficulty || ''
           })
         } else {
-          // Normal Test fields
           setForm({
             title: testData.title || '',
-            Contain: testData.Contain || testData.contain || '',
+            contain: testData.contain || testData.Contain || '',
             language: testData.language || '',
             courseId: testData.course?.id || ''
           })
         }
+
         setMessage('✅ Test found. You can now modify and confirm.')
         setVariant('success')
       } else {
@@ -92,8 +93,14 @@ export default function ModifyTest() {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  const handleImageChange = (e) => {
-    setImage(e.target.files[0])
+  // Normalize datetime-local input to backend format yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
+  const normalizeDateTime = (dt) => {
+    if (!dt) return dt
+    if (dt.length === 16) return dt + ':00.000Z'
+    if (dt.length === 19) return dt + '.000Z'
+    if (dt.includes('.') && !dt.endsWith('Z')) return dt + 'Z'
+    if (dt.endsWith('Z') && !dt.includes('.')) return dt.replace(/Z$/, '.000Z')
+    return dt
   }
 
   const handleUpdateTest = async () => {
@@ -105,7 +112,7 @@ export default function ModifyTest() {
 
     if (testType === 'NORMAL') {
       // Validate Normal Test fields
-      if (!form.title || !form.Contain || !form.language || !form.courseId) {
+      if (!form.title || !form.contain || !form.language || !form.courseId) {
         setMessage('Please fill all required fields for Normal Test.')
         setVariant('danger')
         return
@@ -118,7 +125,7 @@ export default function ModifyTest() {
         setVariant('danger')
         return
       }
-      
+
       // Validate dates
       if (form.startingDate && form.endingDate) {
         const start = new Date(form.startingDate)
@@ -129,7 +136,7 @@ export default function ModifyTest() {
           return
         }
       }
-      
+
       // Validate duration
       if (parseInt(form.durationInMinutes) <= 0) {
         setMessage('Duration must be a positive number.')
@@ -139,38 +146,34 @@ export default function ModifyTest() {
     }
 
     let testData = {}
-    
     if (testType === 'NORMAL') {
       testData = {
         title: form.title,
-        Contain: form.Contain,
+        contain: form.contain,
         language: form.language,
-        course: {
-          id: parseInt(form.courseId)
-        }
+        course: { id: parseInt(form.courseId) }
       }
-    } else if (testType === 'LIVE') {
+    } else {
       testData = {
         title: form.title,
         contain: form.contain,
         language: form.language,
         durationInMinutes: parseInt(form.durationInMinutes),
-        startingDate: form.startingDate,
-        endingDate: form.endingDate,
+        startingDate: normalizeDateTime(form.startingDate),
+        endingDate: normalizeDateTime(form.endingDate),
         difficulty: form.difficulty
       }
     }
 
-    const formData = new FormData()
-    formData.append('test', new Blob([JSON.stringify(testData)], { type: 'application/json' }))
-    if (image) formData.append('image', image)
-
     try {
-      const response = await axios.put(
-        `http://localhost:8080/tests/update/${testId}`,
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      )
+      const endpoint = testType === 'NORMAL'
+        ? `http://localhost:8080/test/normal/${testId}`
+        : `http://localhost:8080/test/live/${testId}`
+
+      const response = await axios.put(endpoint, testData, {
+        headers: { 'Content-Type': 'application/json' }
+      })
+
       if (response.status === 200) {
         setMessage('✅ Test updated successfully.')
         setVariant('success')
@@ -178,7 +181,6 @@ export default function ModifyTest() {
         setTest(null)
         setForm(null)
         setTestType('')
-        setImage(null)
       } else {
         setMessage('❌ Failed to update test.')
         setVariant('danger')
@@ -204,6 +206,14 @@ export default function ModifyTest() {
           <Card className="mb-4">
             <Card.Body>
               <Form onSubmit={e => { e.preventDefault(); handleCheckTest(); }}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Select Test Type</Form.Label>
+                  <Form.Select value={testType} onChange={(e) => setTestType(e.target.value)}>
+                    <option value="">Select test type</option>
+                    <option value="NORMAL">Normal Test</option>
+                    <option value="LIVE">Live Test</option>
+                  </Form.Select>
+                </Form.Group>
                 <Form.Group className="mb-3">
                   <Form.Label><strong>Enter Test ID</strong></Form.Label>
                   <Form.Control
@@ -247,8 +257,8 @@ export default function ModifyTest() {
                         <Form.Control 
                           as="textarea" 
                           rows={5}
-                          name="Contain" 
-                          value={form.Contain} 
+                          name="contain" 
+                          value={form.contain} 
                           onChange={handleChange} 
                           placeholder="Enter test content"
                           required 
@@ -355,18 +365,7 @@ export default function ModifyTest() {
                     </>
                   )}
 
-                  {/* Image Upload (Optional) */}
-                  <Form.Group className="mb-3">
-                    <Form.Label><strong>Test Image</strong> <span className="text-muted">(optional)</span></Form.Label>
-                    <Form.Control 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleImageChange} 
-                    />
-                    <Form.Text className="text-muted">
-                      Leave empty to keep the existing image
-                    </Form.Text>
-                  </Form.Group>
+
 
                   <div className="d-grid gap-2">
                     <Button variant="warning" size="lg" onClick={handleUpdateTest}>
