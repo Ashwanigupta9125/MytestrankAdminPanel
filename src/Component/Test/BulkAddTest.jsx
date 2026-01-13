@@ -19,6 +19,7 @@ const testLanguages = ['ENGLISH', 'HINDI']
 export default function BulkAddTest() {
   const [courses, setCourses] = useState([])
   const [courseId, setCourseId] = useState('')
+  const [errorsMap, setErrorsMap] = useState({})
   const [defaultLanguage, setDefaultLanguage] = useState('')
   const [tests, setTests] = useState([
     {
@@ -45,7 +46,7 @@ export default function BulkAddTest() {
       setLoadingCourses(true)
       setMessage('')
       try {
-        const res = await axios.get('http://localhost:8080/courses/getallcourse')
+        const res = await axios.get('http://localhost:8080/fetch/allCourseMainPage')
         const data = Array.isArray(res.data) ? res.data : []
         setCourses(data)
       } catch (error) {
@@ -129,199 +130,144 @@ export default function BulkAddTest() {
     return ''
   }
 
-  const handleSubmit = async e => {
-    e.preventDefault()
-    setMessage('')
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  setMessage('');
+  setErrorsMap({});
 
-    if (!courseId) {
-      setVariant('danger')
-      setMessage('Please select a course before submitting.')
-      return
-    }
-
-    for (let i = 0; i < tests.length; i++) {
-      const errorMsg = validateTest(tests[i])
-      if (errorMsg) {
-        setVariant('danger')
-        setMessage(`Row ${i + 1}: ${errorMsg}`)
-        return
-      }
-    }
-
-    setSubmitting(true)
-    let successCount = 0
-    let failCount = 0
-
-    try {
-      for (let i = 0; i < tests.length; i++) {
-        const t = tests[i]
-        const testData = {
-          title: t.title,
-          description: t.description,
-          type: t.type,
-          language: t.language,
-          price: parseFloat(t.price),
-          discountPercentage: parseFloat(t.discountPercentage),
-          durationInMinutes: parseInt(t.durationInMinutes),
-          contain: t.contain,
-          scheduledStart: t.scheduledStart,
-          scheduledEnd: t.scheduledEnd,
-          course: {
-            id: parseInt(courseId)
-          }
-        }
-
-        const formData = new FormData()
-        formData.append(
-          'test',
-          new Blob([JSON.stringify(testData)], { type: 'application/json' })
-        )
-        formData.append('image', t.imageFile)
-
-        try {
-          const response = await axios.post(
-            'http://localhost:8080/tests/addtest',
-            formData,
-            {
-              headers: {
-                'Content-Type': 'multipart/form-data'
-              }
-            }
-          )
-          if (response.status === 201 || response.status === 200) {
-            successCount++
-          } else {
-            failCount++
-          }
-        } catch (error) {
-          console.error('Error adding test row', i + 1, error)
-          failCount++
-        }
-      }
-
-      if (failCount === 0) {
-        setVariant('success')
-        setMessage(`All ${successCount} tests added successfully!`)
-        setTests([
-          {
-            title: '',
-            description: '',
-            type: '',
-            language: defaultLanguage || '',
-            price: '',
-            discountPercentage: '',
-            durationInMinutes: '',
-            contain: '',
-            scheduledStart: '',
-            scheduledEnd: '',
-            imageFile: null
-          }
-        ])
-      } else {
-        setVariant('warning')
-        setMessage(
-          `Bulk add completed. Success: ${successCount}, Failed: ${failCount}. Check server logs for details.`
-        )
-      }
-    } finally {
-      setSubmitting(false)
-    }
+  if (!courseId) {
+    setVariant('danger');
+    setMessage('Please select a course before submitting.');
+    return;
   }
 
+  // 1. Prepare the data array
+  const payload = tests.map(t => ({
+    title: t.title,
+    contain: t.contain,
+    language: t.language,
+    course: { id: parseInt(courseId) } // Ensure backend can map this
+  }));
+
+  setSubmitting(true);
+
+  try {
+    // 2. Single call to the bulk endpoint
+    const res = await axios.post('http://localhost:8080/test/normal/bulk', payload);
+    
+    const { successIds, failed } = res.data;
+    const failCount = Object.keys(failed || {}).length;
+    const successCount = successIds?.length || 0;
+
+    if (failCount === 0) {
+      setVariant('success');
+      setMessage(`Successfully uploaded all ${successCount} tests!`);
+      // Reset form
+      setTests([{ title: '', contain: '', language: defaultLanguage || '', courseId: '' }]);
+    } else {
+      setVariant('warning');
+      // Construct a detailed message for failures
+      const errorDetails = Object.entries(failed)
+        .map(([index, reason]) => `Row ${parseInt(index) + 1}: ${reason}`)
+        .join(' | ');
+      
+      setMessage(`Completed: ${successCount} succeeded. ${failCount} failed. Details: ${errorDetails}`);
+    }
+  } catch (error) {
+    setVariant('danger');
+    setMessage('Server Error: ' + (error.response?.data?.message || error.message));
+  } finally {
+    setSubmitting(false);
+  }
+  };
   const today = new Date().toISOString().slice(0, 16)
 
-  return (
-    <Container className="mt-4">
-      <Row className="justify-content-md-center">
-        <Col md={12}>
-          <h2 className="mb-3">Add Tests in Bulk</h2>
-          <p className="text-muted">
-            Select a course and fill multiple test rows. All tests will be created for the selected course.
-          </p>
+ return (
+  <Container className="mt-4">
+    <Row className="justify-content-md-center">
+      <Col md={12}>
+        <h2 className="mb-3">Add Tests in Bulk</h2>
+        <p className="text-muted">
+          Select a course and fill multiple test rows. All tests will be created for the selected course.
+        </p>
 
-          {message && <Alert variant={variant}>{message}</Alert>}
+        {/* Global Success/Error Message */}
+        {message && <Alert variant={variant}>{message}</Alert>}
 
-          <Card className="mb-3">
-            <Card.Body>
-              <Form.Group as={Row} className="align-items-center">
-                <Form.Label column sm={2}>
-                  Course
-                </Form.Label>
-                <Col sm={10}>
-                  <Form.Select
-                    value={courseId}
-                    onChange={e => setCourseId(e.target.value)}
-                    disabled={loadingCourses || submitting}
-                  >
-                    <option value="">
-                      {loadingCourses ? 'Loading courses...' : 'Select a course'}
+        {/* Course and Language Selectors */}
+        <Card className="mb-3">
+          <Card.Body>
+            <Form.Group as={Row} className="align-items-center">
+              <Form.Label column sm={2}>Course</Form.Label>
+              <Col sm={10}>
+                <Form.Select
+                  value={courseId}
+                  onChange={e => setCourseId(e.target.value)}
+                  disabled={loadingCourses || submitting}
+                >
+                  <option value="">{loadingCourses ? 'Loading courses...' : 'Select a course'}</option>
+                  {courses.map(course => (
+                    <option key={course.id} value={course.id}>
+                      {course.id} - {course.title || course.name || 'Untitled Course'}
                     </option>
-                    {courses.map(course => (
-                      <option key={course.id} value={course.id}>
-                        {course.id} - {course.title || course.name || 'Untitled Course'}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Col>
-              </Form.Group>
+                  ))}
+                </Form.Select>
+              </Col>
+            </Form.Group>
 
-              <Form.Group as={Row} className="align-items-center mt-3">
-                <Form.Label column sm={2}>
-                  Default Language
-                </Form.Label>
-                <Col sm={10}>
-                  <Form.Select
-                    value={defaultLanguage}
-                    onChange={e => setDefaultLanguage(e.target.value)}
-                    disabled={submitting}
-                  >
-                    <option value="">Select default language (optional)</option>
-                    {testLanguages.map(lang => (
-                      <option key={lang} value={lang}>
-                        {lang}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Col>
-              </Form.Group>
-            </Card.Body>
-          </Card>
+            <Form.Group as={Row} className="align-items-center mt-3">
+              <Form.Label column sm={2}>Default Language</Form.Label>
+              <Col sm={10}>
+                <Form.Select
+                  value={defaultLanguage}
+                  onChange={e => setDefaultLanguage(e.target.value)}
+                  disabled={submitting}
+                >
+                  <option value="">Select default language (optional)</option>
+                  {testLanguages.map(lang => (
+                    <option key={lang} value={lang}>{lang}</option>
+                  ))}
+                </Form.Select>
+              </Col>
+            </Form.Group>
+          </Card.Body>
+        </Card>
 
-          <Form onSubmit={handleSubmit}>
-            <Card>
-              <Card.Header className="d-flex justify-content-between align-items-center">
-                <span>Test Details</span>
-                <div className="d-flex align-items-center gap-2">
-                  <Badge bg="secondary">Total tests: {tests.length}</Badge>
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    type="button"
-                    onClick={addTestRow}
-                    disabled={submitting}
-                  >
-                    + Add Test
-                  </Button>
-                </div>
-              </Card.Header>
-              <Card.Body>
-                <Accordion defaultActiveKey="0" alwaysOpen>
-                  {tests.map((t, index) => (
-                    <Accordion.Item eventKey={String(index)} key={index}>
+        <Form onSubmit={handleSubmit}>
+          <Card>
+            <Card.Header className="d-flex justify-content-between align-items-center">
+              <span>Test Details</span>
+              <div className="d-flex align-items-center gap-2">
+                <Badge bg="secondary">Total tests: {tests.length}</Badge>
+                <Button variant="outline-primary" size="sm" onClick={addTestRow} disabled={submitting}>
+                  + Add Test
+                </Button>
+              </div>
+            </Card.Header>
+            <Card.Body>
+              <Accordion defaultActiveKey="0" alwaysOpen>
+                {tests.map((t, index) => {
+                  // NEW: Check if this specific row has an error from the backend
+                  const rowError = errorsMap[index];
+
+                  return (
+                    <Accordion.Item 
+                      eventKey={String(index)} 
+                      key={index}
+                      className={rowError ? "border-danger mb-2" : "mb-2"}
+                    >
                       <Accordion.Header>
                         <div className="d-flex justify-content-between w-100 align-items-center">
                           <span>
                             <strong>Test #{index + 1}</strong>
                             {t.title ? ` - ${t.title}` : ''}
+                            {/* NEW: Error Badge */}
+                            {rowError && <Badge bg="danger" className="ms-2">Failed</Badge>}
                           </span>
                           <Button
                             variant="outline-danger"
                             size="sm"
-                            type="button"
-                            onClick={e => {
-                              e.stopPropagation()
-                              removeTestRow(index)
-                            }}
+                            onClick={e => { e.stopPropagation(); removeTestRow(index); }}
                             disabled={tests.length === 1 || submitting}
                           >
                             Remove
@@ -329,6 +275,13 @@ export default function BulkAddTest() {
                         </div>
                       </Accordion.Header>
                       <Accordion.Body>
+                        {/* NEW: Specific Error Alert for this row */}
+                        {rowError && (
+                          <Alert variant="danger" className="py-1 small mb-3">
+                            <strong>Error:</strong> {rowError}
+                          </Alert>
+                        )}
+
                         <Row className="g-3">
                           <Col md={6}>
                             <Form.Group>
@@ -336,9 +289,8 @@ export default function BulkAddTest() {
                               <Form.Control
                                 type="text"
                                 value={t.title}
-                                onChange={e =>
-                                  handleTestChange(index, 'title', e.target.value)
-                                }
+                                isInvalid={!!rowError} // Highlights input red on error
+                                onChange={e => handleTestChange(index, 'title', e.target.value)}
                                 placeholder="Enter test title"
                               />
                             </Form.Group>
@@ -348,19 +300,12 @@ export default function BulkAddTest() {
                               <Form.Label>Language</Form.Label>
                               <Form.Select
                                 value={t.language}
-                                onChange={e =>
-                                  handleTestChange(index, 'language', e.target.value)
-                                }
+                                isInvalid={!!rowError}
+                                onChange={e => handleTestChange(index, 'language', e.target.value)}
                               >
-                                <option value="">
-                                  {defaultLanguage
-                                    ? `Select language (default: ${defaultLanguage})`
-                                    : 'Select language'}
-                                </option>
+                                <option value="">Select language</option>
                                 {testLanguages.map(lang => (
-                                  <option key={lang} value={lang}>
-                                    {lang}
-                                  </option>
+                                  <option key={lang} value={lang}>{lang}</option>
                                 ))}
                               </Form.Select>
                             </Form.Group>
@@ -372,9 +317,8 @@ export default function BulkAddTest() {
                                 as="textarea"
                                 rows={2}
                                 value={t.contain}
-                                onChange={e =>
-                                  handleTestChange(index, 'contain', e.target.value)
-                                }
+                                isInvalid={!!rowError}
+                                onChange={e => handleTestChange(index, 'contain', e.target.value)}
                                 placeholder="What does this test contain?"
                               />
                             </Form.Group>
@@ -382,45 +326,35 @@ export default function BulkAddTest() {
                         </Row>
                       </Accordion.Body>
                     </Accordion.Item>
-                  ))}
-                </Accordion>
+                  );
+                })}
+              </Accordion>
 
-                <div className="text-center mt-3">
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    type="button"
-                    onClick={addTestRow}
-                    disabled={submitting}
-                  >
-                    + Add Another Test
-                  </Button>
-                </div>
-              </Card.Body>
-            </Card>
+              <div className="text-center mt-3">
+                <Button variant="outline-primary" size="sm" onClick={addTestRow} disabled={submitting}>
+                  + Add Another Test
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
 
-            <div className="mt-3">
-              <Button
-                variant="primary"
-                type="submit"
-                className="w-100"
-                disabled={submitting || loadingCourses}
-              >
-                {submitting ? (
-                  <>
-                    <Spinner animation="border" size="sm" className="me-2" />
-                    Submitting tests...
-                  </>
-                ) : (
-                  'Add All Tests'
-                )}
-              </Button>
-            </div>
-          </Form>
-        </Col>
-      </Row>
-    </Container>
-  )
+          <div className="mt-3">
+            <Button variant="primary" type="submit" className="w-100" disabled={submitting || loadingCourses}>
+              {submitting ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  Submitting {tests.length} tests...
+                </>
+              ) : (
+                'Add All Tests'
+              )}
+            </Button>
+          </div>
+        </Form>
+      </Col>
+    </Row>
+  </Container>
+)
 }
 
 
